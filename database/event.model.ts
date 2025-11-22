@@ -108,7 +108,7 @@ const EventSchema = new Schema<IEvent>(
 // Pre-save hook: Generate slug, normalize date and time
 EventSchema.pre("save", function () {
   // Generate URL-friendly slug from title if title is modified
-  if (this.isModified("title")) {
+  if (this.isNew || this.isModified("title")) {
     this.slug = this.title
       .toLowerCase()
       .trim()
