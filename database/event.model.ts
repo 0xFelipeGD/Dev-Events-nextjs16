@@ -119,12 +119,23 @@ EventSchema.pre("save", function () {
 
   // Validate and normalize date to ISO format (YYYY-MM-DD)
   if (this.isModified("date")) {
-    const dateObj = new Date(this.date);
-    if (isNaN(dateObj.getTime())) {
-      throw new Error("Invalid date format. Please provide a valid date.");
+    // Validate date string is in YYYY-MM-DD format and is a valid date
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dateRegex.test(this.date)) {
+      throw new Error("Invalid date format. Please provide date as YYYY-MM-DD.");
     }
-    // Store in ISO format (YYYY-MM-DD)
-    this.date = dateObj.toISOString().split("T")[0];
+    // Further check if the date is valid (e.g., not 2023-02-30)
+    const [year, month, day] = this.date.split("-").map(Number);
+    const dateObj = new Date(year, month - 1, day);
+    if (
+      dateObj.getFullYear() !== year ||
+      dateObj.getMonth() !== month - 1 ||
+      dateObj.getDate() !== day
+    ) {
+      throw new Error("Invalid date. Please provide a real calendar date in YYYY-MM-DD format.");
+    }
+    // Store as-is (already in YYYY-MM-DD)
+    this.date = this.date;
   }
 
   // Normalize time to HH:MM format (24-hour)
