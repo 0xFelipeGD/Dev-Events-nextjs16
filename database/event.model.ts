@@ -106,16 +106,26 @@ const EventSchema = new Schema<IEvent>(
 );
 
 // Pre-save hook: Generate slug, normalize date and time
-EventSchema.pre("save", function () {
+EventSchema.pre("save", async function () {
   // Generate URL-friendly slug from title if title is modified
-  if (this.isNew || this.isModified("title")) {
-    this.slug = this.title
+  if (this.isModified("title")) {
+    let baseSlug = this.title
       .toLowerCase()
       .trim()
       .replace(/[^\w\s-]/g, "") // Remove special characters
       .replace(/\s+/g, "-") // Replace spaces with hyphens
       .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
       .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+
+    let slug = baseSlug;
+    let counter = 1;
+    // Check for existing slugs
+    const EventModel = this.constructor;
+    while (await EventModel.findOne({ slug, _id: { $ne: this._id } })) {
+      slug = `${baseSlug}-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+      counter++;
+    }
+    this.slug = slug;
   }
 
   // Validate and normalize date to ISO format (YYYY-MM-DD)
